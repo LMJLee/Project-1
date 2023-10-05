@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from markdown import Markdown
-
+import os
 from . import util
 from . import models
 from django import forms
@@ -25,21 +25,25 @@ def search(request):
     if request.method == 'GET':
         query = request.GET.get('q')
         entries = [entry.lower() for entry in util.list_entries()]
-        if query not in entries:
-            #If the query does not match the name of an encyclopedia entry, the user should instead be taken to a search results page that displays a 
-            # list of all encyclopedia entries that have the query as a substring. For example, if the search query were ytho, then Python should appear in the search results.
-            Entry.objects.get(headline__contains=query)
-            return render(request, "..")
+      
         if query:
-            print("text:", query)
             return title(request, query) 
-        else:
-            print("No input provided.")
-    return HttpResponse("Search results page")
+        
+        elif query not in entries:
 
+            # Get a list of all files in the directory
+            all_files = os.listdir("entries")
+
+            # Filter files that contain the substring
+            test = [filename for filename in all_files if query in filename]
+
+            for filename in test:
+                print(test)
+                print(query)
+            return render(request, "../templates/encyclopedia/sub.html", {"test": test})
+        
+      
 
 def index(request):
-    return render(request, "../templates/encyclopedia/index.html", {
-        "entries": util.list_entries()
-    })
+    return render(request, "../templates/encyclopedia/index.html", {"entries": util.list_entries()})
 
