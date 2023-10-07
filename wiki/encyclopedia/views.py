@@ -1,6 +1,8 @@
 from django.shortcuts import render
+import re
 from django.http import HttpResponse
 from markdown import Markdown
+import markdownify 
 import os
 from . import util
 from . import models
@@ -12,38 +14,53 @@ from django import forms
 #If the entry does exist, the user should be presented with a page that displays the content of the entry. The title of the page should include the name of the entry.
 
 
-
-
 def title(request, title):
-    entries = [entry.lower() for entry in util.list_entries()]
-    if title not in entries:
+    entry_list = [entry.lower() for entry in util.list_entries()]  
+    if title.lower() not in entry_list:
         return index(request)
     content = Markdown().convert(util.get_entry(title))
-    return render(request, "../templates/encyclopedia/title.html", {"title": title, "content": content})
+    return render(request, "encyclopedia/title.html", {"title": title, "content": content})
+
 
 def search(request):
     if request.method == 'GET':
-        query = request.GET.get('q')
+        query = request.GET.get('q').lower() 
+
         entries = [entry.lower() for entry in util.list_entries()]
       
-        if query:
+        if query in entries:
             return title(request, query) 
-        
-        elif query not in entries:
-
-            # Get a list of all files in the directory
+        else:
+            # Get a list of all files in the "entries" directory
             all_files = os.listdir("entries")
 
-            # Filter files that contain the substring
-            test = [filename for filename in all_files if query in filename]
+            # Filter files that contain the substring (convert query to lowercase)
+            test1 = [filename for filename in all_files if query in filename.lower()]
+            test = sorted(re.sub(r"\.md$", "", filename)
+                for filename in test1 if filename.endswith(".md"))
 
-            for filename in test:
-                print(test)
-                print(query)
-            return render(request, "../templates/encyclopedia/sub.html", {"test": test})
+            print(test)
+            print(query)
+            return render(request,"../templates/encyclopedia/sub.html", {"test": test})
         
       
 
 def index(request):
     return render(request, "../templates/encyclopedia/index.html", {"entries": util.list_entries()})
+
+def create(request):
+    return render(request, "../templates/encyclopedia/create.html")
+
+def createpage(request):
+    if request.method == 'GET':
+        title = request.GET.get('page-title')
+        text = request.GET.get('page-text')
+
+        #convert text markdown
+
+        content = markdownify.markdownify(text)
+
+        return save_entry(title, content)
+
+
 
