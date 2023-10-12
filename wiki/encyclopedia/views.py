@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 import re
 from django.http import HttpResponse
 from markdown import Markdown
@@ -51,16 +51,26 @@ def index(request):
 def create(request):
     return render(request, "../templates/encyclopedia/create.html")
 
+
 def createpage(request):
     if request.method == 'GET':
-        title = request.GET.get('page-title')
-        text = request.GET.get('page-text')
-
-        #convert text markdown
+        return render(request, "../templates/encyclopedia/create.html")  # Assuming you have a template for creating a page
+    
+    elif request.method == 'POST':
+        title = request.POST.get('page-title')
+        text = request.POST.get('page-text')
 
         content = markdownify.markdownify(text)
 
-        return save_entry(title, content)
+        # Save the entry using your util function (assuming it returns an HttpResponse)
+        result = util.save_entry(title, content)
 
+        # Check if the save operation was successful and return an appropriate response
+        if result:
+            return redirect('index')   #  return an HttpResponse 
+        else:
+            # Handle the case where the save operation failed
+            return HttpResponse("Error saving the entry")
 
-
+    else:
+        return redirect('index')  
